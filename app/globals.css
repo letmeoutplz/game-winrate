@@ -1,26 +1,250 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg-primary: #ffffff;
+  --bg-secondary: #f2f2f2;
+  --bg-tertiary: #e5e5e5;
+
+  --label-primary: #000000;
+  --label-secondary: rgba(0, 0, 0, 0.6);
+  --label-tertiary: rgba(0, 0, 0, 0.3);
+  --label-quaternary: rgba(0, 0, 0, 0.16);
+
+  --separator-opaque: #d1d1d1;
+  --separator-non-opaque: rgba(0, 0, 0, 0.12);
+
+  --glass-fill: rgba(255, 255, 255, 0.65);
+  --glass-shadow: 0 8px 40px rgba(0, 0, 0, 0.12);
+  --glass-inset-fill: rgba(255, 255, 255, 0.5);
+  --glass-inset-fill-selected: rgba(0, 0, 0, 0.06);
+  --track-fill: rgba(0, 0, 0, 0.06);
+
+  --accent-fill: #000000;
+  --accent-label: #ffffff;
+
+  --win: #1c1c1e;
+  --lose: rgba(0, 0, 0, 0.35);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-background: var(--bg-secondary);
+  --color-foreground: var(--label-primary);
+  --font-sans: -apple-system, "SF Pro Text", "SF Pro Display", system-ui, sans-serif;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --bg-primary: #000000;
+    --bg-secondary: #1c1c1e;
+    --bg-tertiary: #2c2c2e;
+
+    --label-primary: #ffffff;
+    --label-secondary: rgba(255, 255, 255, 0.7);
+    --label-tertiary: rgba(255, 255, 255, 0.3);
+    --label-quaternary: rgba(255, 255, 255, 0.16);
+
+    --separator-opaque: #38383a;
+    --separator-non-opaque: rgba(255, 255, 255, 0.17);
+
+    --glass-fill: rgba(28, 28, 30, 0.6);
+    --glass-shadow: 0 8px 40px rgba(0, 0, 0, 0.4);
+    --glass-inset-fill: rgba(255, 255, 255, 0.08);
+    --glass-inset-fill-selected: rgba(255, 255, 255, 0.16);
+    --track-fill: rgba(255, 255, 255, 0.1);
+
+    --accent-fill: #ffffff;
+    --accent-label: #000000;
+
+    --win: #ffffff;
+    --lose: rgba(255, 255, 255, 0.35);
   }
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg-secondary);
+  color: var(--label-primary);
+  font-family: var(--font-sans);
+  letter-spacing: -0.43px;
+}
+
+/* 유리 뒤에 블러할 대상이 있어야 유리 느낌이 남 — 고정 배경에 그레이스케일 블롭 배치 */
+.glass-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(38rem 24rem at 12% 8%, rgba(0, 0, 0, 0.16), transparent 60%),
+    radial-gradient(30rem 26rem at 88% 20%, rgba(0, 0, 0, 0.1), transparent 55%),
+    radial-gradient(34rem 30rem at 50% 92%, rgba(0, 0, 0, 0.12), transparent 60%);
+}
+@media (prefers-color-scheme: dark) {
+  .glass-backdrop {
+    background:
+      radial-gradient(38rem 24rem at 12% 8%, rgba(255, 255, 255, 0.14), transparent 60%),
+      radial-gradient(30rem 26rem at 88% 20%, rgba(255, 255, 255, 0.08), transparent 55%),
+      radial-gradient(34rem 30rem at 50% 92%, rgba(255, 255, 255, 0.1), transparent 60%);
+  }
+}
+
+/* Liquid Glass surface — 3-layer: fill+burn/darken 톤, backdrop blur, screen 틴트 */
+.glass {
+  position: relative;
+  z-index: 0;
+  background-color: rgba(255, 255, 255, 0.65);
+  background-image: linear-gradient(#ddd, #ddd), linear-gradient(#f7f7f7, #f7f7f7);
+  background-blend-mode: color-burn, darken;
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  box-shadow: var(--glass-shadow);
+  border-radius: 28px;
+  border: 1px solid var(--separator-non-opaque);
+}
+@media (prefers-color-scheme: dark) {
+  .glass {
+    background-color: rgba(204, 204, 204, 0.5);
+    background-image: linear-gradient(#3a3a3c, #3a3a3c);
+    background-blend-mode: color-burn;
+  }
+}
+/* 최상단 틴트 — 배경과 screen 블렌드로 유리 굴절 느낌 */
+.glass::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: rgba(0, 0, 0, 0.08);
+  mix-blend-mode: screen;
+}
+@media (prefers-color-scheme: dark) {
+  .glass::after {
+    background: linear-gradient(rgba(255, 255, 255, 0.06), rgba(0, 0, 0, 0.6));
+    mix-blend-mode: normal;
+  }
+}
+/* 위쪽 가장자리 하이라이트 — 유리에 빛이 맺히는 느낌 */
+.glass::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.8),
+    rgba(255, 255, 255, 0) 40%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+@media (prefers-color-scheme: dark) {
+  .glass::before {
+    background: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.35),
+      rgba(255, 255, 255, 0) 40%
+    );
+  }
+}
+
+/* Typography scale */
+.text-large-title {
+  font-size: 34px;
+  font-weight: 700;
+  line-height: 41px;
+  letter-spacing: 0.4px;
+}
+.text-title-2 {
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 28px;
+  letter-spacing: 0.35px;
+}
+.text-subtitle {
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 20px;
+  letter-spacing: -0.23px;
+  color: var(--label-secondary);
+}
+.text-footnote {
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 18px;
+  letter-spacing: -0.08px;
+  color: var(--label-tertiary);
+}
+
+/* Buttons */
+.btn-prominent {
+  background: var(--accent-fill);
+  color: var(--accent-label);
+  border-radius: 999px;
+  font-size: 17px;
+  font-weight: 510;
+  padding: 8px 20px;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+.btn-prominent:active {
+  transform: scale(0.96);
+  opacity: 0.85;
+}
+.btn-prominent:disabled {
+  opacity: 0.4;
+}
+
+.chip {
+  background: var(--glass-inset-fill);
+  backdrop-filter: blur(12px) saturate(160%);
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
+  border-radius: 999px;
+  padding: 6px 16px;
+  font-size: 15px;
+  font-weight: 510;
+  border: 1px solid var(--separator-opaque);
+  color: var(--label-secondary);
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+.chip:active {
+  transform: scale(0.96);
+}
+.chip-selected {
+  background: var(--accent-fill);
+  color: var(--accent-label);
+  border-color: transparent;
+}
+
+.field {
+  background: var(--glass-inset-fill);
+  backdrop-filter: blur(12px) saturate(160%);
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
+  border: 1px solid var(--separator-non-opaque);
+  border-radius: 14px;
+  padding: 8px 14px;
+  font-size: 17px;
+  color: var(--label-primary);
+}
+
+/* 승률 바 트랙 — 반투명 유리 느낌 */
+.track {
+  background: var(--track-fill);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--separator-non-opaque);
+}
+.track-fill {
+  transform-origin: left;
+  transition: transform 0.3s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn-prominent,
+  .chip,
+  .track-fill {
+    transition: none;
+  }
 }
