@@ -35,7 +35,6 @@ export default async function Home() {
       <section className="settlement-panel" aria-labelledby="settlement-title">
         <div className="section-heading compact">
           <div><p className="eyebrow">SETTLEMENT LEDGER</p><h2 id="settlement-title">정산 장부</h2></div>
-          <p>한 판씩 기록하고, 모임이 끝나면 함께 정산하세요.</p>
         </div>
         <SettlementLedger />
       </section>

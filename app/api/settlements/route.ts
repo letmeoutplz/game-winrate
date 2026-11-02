@@ -22,11 +22,11 @@ export async function POST(request: NextRequest) {
   try {
     const settlement = await request.json();
     if (!isSettlement(settlement)) return NextResponse.json({ message: "정산 기록 형식이 올바르지 않아요." }, { status: 400 });
-    const { createdAt, ...row } = settlement;
+    const { id, title, note, rounds, createdAt } = settlement;
     await supabaseRequest("settlement_sessions?on_conflict=id", {
       method: "POST",
       headers: { Prefer: "resolution=ignore-duplicates" },
-      body: JSON.stringify({ ...row, created_at: createdAt }),
+      body: JSON.stringify({ id, title, note, rounds, created_at: createdAt }),
     });
     return NextResponse.json({ ok: true });
   } catch (error) {
