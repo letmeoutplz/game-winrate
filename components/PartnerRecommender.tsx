@@ -7,26 +7,21 @@ import { TeammateBars } from "./TeammateBars";
 
 export function PartnerRecommender({ games }: { games: Game[] }) {
   const [selected, setSelected] = useState<string>("전체");
-
-  const filtered = useMemo(
-    () => (selected === "전체" ? games : games.filter((g) => g.game === selected)),
-    [games, selected]
-  );
-  const stats = useMemo(
-    () => winRateByTeammate(filtered).filter((s) => s.name !== "기원"),
-    [filtered]
-  );
+  const stats = useMemo(() => {
+    const filtered = selected === "전체" ? games : games.filter((game) => game.game === selected);
+    return winRateByTeammate(filtered).filter((stat) => stat.name !== "기원");
+  }, [games, selected]);
   const best = stats[0];
 
   return (
-    <div className="space-y-4">
-      <div className="flex gap-2 flex-wrap">
+    <div className="recommendation-content">
+      <div className="game-filter" aria-label="게임 선택">
         {["전체", ...GAME_OPTIONS].map((g) => (
           <button
             key={g}
             type="button"
             onClick={() => setSelected(g)}
-            className={`chip ${selected === g ? "chip-selected" : ""}`}
+            className={selected === g ? "filter-active" : "filter-button"}
           >
             {g}
           </button>
@@ -34,17 +29,16 @@ export function PartnerRecommender({ games }: { games: Game[] }) {
       </div>
 
       {best ? (
-        <p className="text-subtitle">
-          {selected === "전체" ? "전체 게임" : selected} 기준, 지금까지{" "}
-          <b style={{ color: "var(--label-primary)" }}>{best.name}</b>와 팀했을 때
-          승률이 가장 좋아요 (보정 {Math.round(best.adjustedWinRate * 100)}%, 실승률{" "}
-          {Math.round(best.winRate * 100)}%, {best.wins}승 {best.games - best.wins}패)
-        </p>
+        <div className="best-pick">
+          <p>가장 잘 맞는 파트너</p>
+          <div><strong>{best.name}</strong><span>보정 승률 {Math.round(best.adjustedWinRate * 100)}%</span></div>
+          <small>{selected === "전체" ? "전체 게임" : selected}에서 {best.wins}승 {best.games - best.wins}패 · 실승률 {Math.round(best.winRate * 100)}%</small>
+        </div>
       ) : (
-        <p className="text-footnote">이 게임으로 같이 한 기록이 아직 없어요.</p>
+        <p className="empty-state">이 게임으로 같이 한 기록이 아직 없어요.</p>
       )}
 
-      <TeammateBars stats={stats} />
+      {stats.length > 0 && <TeammateBars stats={stats} />}
     </div>
   );
 }

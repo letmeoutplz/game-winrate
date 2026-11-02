@@ -1,0 +1,192 @@
+"use client";
+
+import { FormEvent, useEffect, useMemo, useState } from "react";
+import { PLAYER_OPTIONS } from "@/lib/notion";
+import { Amounts, Round, Settlement } from "@/lib/settlements";
+
+type ActiveSession = { title: string; note: string; rounds: Round[] };
+
+const STORAGE_KEY = "game-winrate-settlements";
+const ACTIVE_KEY = "game-winrate-active-settlement";
+const emptySession: ActiveSession = { title: "", note: "", rounds: [] };
+
+function totalAmounts(rounds: Round[]) {
+  return rounds.reduce<Amounts>((total, round) => {
+    for (const [player, amount] of Object.entries(round.amounts)) total[player] = (total[player] ?? 0) + amount;
+    return total;
+  }, {});
+}
+
+export function SettlementLedger() {
+  const [settlements, setSettlements] = useState<Settlement[]>([]);
+  const [session, setSession] = useState<ActiveSession>(emptySession);
+  const [stake, setStake] = useState("");
+  const [participants, setParticipants] = useState<string[]>([]);
+  const [losers, setLosers] = useState<string[]>([]);
+  const [newMember, setNewMember] = useState("");
+  const [memberOptions, setMemberOptions] = useState<string[]>([...PLAYER_OPTIONS]);
+  const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(async () => {
+      let legacy: Settlement[] = [];
+      try {
+        const saved = window.localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved) as Array<Settlement & { amounts?: Amounts }>;
+          legacy = parsed.map((item) => ({ ...item, rounds: item.rounds ?? (item.amounts ? [{ id: item.id, amounts: item.amounts }] : []) }));
+        }
+        const active = window.localStorage.getItem(ACTIVE_KEY);
+        if (active) setSession(JSON.parse(active));
+      } catch {
+        window.localStorage.removeItem(STORAGE_KEY);
+        window.localStorage.removeItem(ACTIVE_KEY);
+      }
+
+      try {
+        for (const settlement of legacy) {
+          const response = await fetch("/api/settlements", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(settlement) });
+          if (!response.ok) throw new Error((await response.json()).message);
+        }
+        const response = await fetch("/api/settlements");
+        if (!response.ok) throw new Error((await response.json()).message);
+        setSettlements(await response.json());
+        if (legacy.length > 0) window.localStorage.removeItem(STORAGE_KEY);
+      } catch (loadError) {
+        setSettlements(legacy);
+        setError(loadError instanceof Error ? loadError.message : "Supabase 기록을 불러오지 못했어요.");
+      }
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
+
+  const roundAmounts = useMemo(() => {
+    const amount = Number(stake) || 0;
+    const winners = participants.filter((player) => !losers.includes(player));
+    return Object.fromEntries(participants.map((player) => [player, losers.includes(player) ? -(winners.length * amount) : losers.length * amount]));
+  }, [losers, participants, stake]);
+  const runningTotals = totalAmounts(session.rounds);
+
+  function persistSession(next: ActiveSession) {
+    setSession(next);
+    window.localStorage.setItem(ACTIVE_KEY, JSON.stringify(next));
+  }
+
+  function toggleParticipant(player: string) {
+    setParticipants((current) => current.includes(player) ? current.filter((name) => name !== player) : [...current, player]);
+    setLosers((current) => current.filter((name) => name !== player));
+  }
+
+  function toggleLoser(player: string) {
+    setLosers((current) => current.includes(player) ? current.filter((name) => name !== player) : [...current, player]);
+  }
+
+  function addMember() {
+    const name = newMember.trim();
+    if (!name) return;
+    if (!memberOptions.includes(name)) setMemberOptions((current) => [...current, name]);
+    if (!participants.includes(name)) setParticipants((current) => [...current, name]);
+    setNewMember("");
+  }
+
+  function addRound(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!session.title.trim()) return setError("첫 판 전에 모임 이름을 한 번만 입력해 주세요.");
+    if (participants.length < 2) return setError("참가 멤버를 두 명 이상 선택해 주세요.");
+    if (!Number.isFinite(Number(stake)) || Number(stake) <= 0) return setError("판돈을 0원보다 큰 금액으로 입력해 주세요.");
+    if (losers.length === 0 || losers.length === participants.length) return setError("진 사람과 이긴 사람이 모두 있어야 정산할 수 있어요.");
+
+    persistSession({ ...session, rounds: [...session.rounds, { id: crypto.randomUUID(), amounts: roundAmounts }] });
+    setLosers([]);
+    setError(null);
+  }
+
+  async function finishSession() {
+    if (session.rounds.length === 0) return setError("최소 한 판을 기록한 뒤 최종 저장할 수 있어요.");
+    const settlement = { ...session, id: crypto.randomUUID(), createdAt: new Date().toISOString() };
+    setSaving(true);
+    try {
+      const response = await fetch("/api/settlements", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(settlement) });
+      if (!response.ok) throw new Error((await response.json()).message);
+      setSettlements([settlement, ...settlements]);
+      window.localStorage.removeItem(ACTIVE_KEY);
+      setSession(emptySession);
+      setError(null);
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : "정산 기록을 저장하지 못했어요.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function deleteSettlement(id: string, title: string) {
+    if (!window.confirm(`"${title}" 모임 기록을 삭제할까요?`)) return;
+    try {
+      const response = await fetch(`/api/settlements/${id}`, { method: "DELETE" });
+      if (!response.ok) throw new Error((await response.json()).message);
+      setSettlements(settlements.filter((settlement) => settlement.id !== id));
+      setError(null);
+    } catch (deleteError) {
+      setError(deleteError instanceof Error ? deleteError.message : "정산 기록을 삭제하지 못했어요.");
+    }
+  }
+
+  return (
+    <div className="settlement-layout">
+      <form className="settlement-form" onSubmit={addRound}>
+        <div className="settlement-fields">
+          <label>모임 이름<input className="field" value={session.title} onChange={(event) => persistSession({ ...session, title: event.target.value })} placeholder="예: 금요일 모마 밤샘" /></label>
+          <label>메모 <input className="field" value={session.note} onChange={(event) => persistSession({ ...session, note: event.target.value })} placeholder="선택 · 정산 근거/계좌이체 메모" /></label>
+        </div>
+        <p className="session-help">모임 이름은 유지됩니다. 매 판 기록을 쌓은 뒤 마지막에 한 번만 최종 저장하세요.</p>
+        <label className="stake-field">1인당 판돈<input className="field" inputMode="numeric" type="number" min="0" step="1000" value={stake} onChange={(event) => setStake(event.target.value)} placeholder="예: 5000" /></label>
+        <div className="member-picker">
+          <span>참가 멤버</span>
+          <div>{memberOptions.map((player) => <button aria-pressed={participants.includes(player)} className={`chip ${participants.includes(player) ? "chip-selected" : ""}`} type="button" key={player} onClick={() => toggleParticipant(player)}>{player}</button>)}</div>
+          <div className="member-adder"><input className="field" aria-label="새 멤버 이름" value={newMember} onChange={(event) => setNewMember(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); addMember(); } }} placeholder="새 멤버 이름" /><button className="add-member-button" type="button" onClick={addMember}>추가</button></div>
+        </div>
+        <div className="member-picker">
+          <span>진 사람</span>
+          <div>{participants.length === 0 ? <p className="empty-state">먼저 참가 멤버를 선택해 주세요.</p> : participants.map((player) => <button aria-pressed={losers.includes(player)} className={`chip ${losers.includes(player) ? "loser-selected" : ""}`} type="button" key={player} onClick={() => toggleLoser(player)}>{player}</button>)}</div>
+        </div>
+        <div className="settlement-preview">
+          <div className="amount-heading"><span>이번 판 미리보기</span><strong className="balanced">합계 0원</strong></div>
+          {participants.length > 0 && <AmountList amounts={roundAmounts} />}
+        </div>
+        {error && <p className="form-error" role="alert">{error}</p>}
+        <button className="save-button" type="submit">이번 판 기록 추가</button>
+      </form>
+
+      <div className="settlement-history" aria-live="polite">
+        <h3>진행 중 기록 <span>{session.rounds.length}판</span></h3>
+        {session.rounds.length === 0 ? <p className="empty-state">판을 추가하면 여기에 차례로 쌓입니다.</p> : <>
+          <ol className="round-list">{session.rounds.map((round, index) => <li key={round.id}><span>{index + 1}판</span><AmountList amounts={round.amounts} /></li>)}</ol>
+          <div className="running-total"><span>현재 누적</span><AmountList amounts={runningTotals} /></div>
+          <button className="finish-button" type="button" disabled={saving} onClick={finishSession}>{saving ? "Supabase에 저장 중…" : "이번 모임 최종 저장"}</button>
+        </>}
+        {settlements.length > 0 && (
+          <div className="completed-sessions">
+            <h3>완료한 모임</h3>
+            {settlements.map((settlement) => (
+              <div className="completed-session" key={settlement.id}>
+                <details>
+                  <summary>{settlement.title} <span>{settlement.rounds.length}판</span></summary>
+                  <AmountList amounts={totalAmounts(settlement.rounds)} />
+                  <ol className="round-list">
+                    {settlement.rounds.map((round, index) => <li key={round.id}><span>{index + 1}판</span><AmountList amounts={round.amounts} /></li>)}
+                  </ol>
+                </details>
+                <button className="delete-session-button" type="button" onClick={() => deleteSettlement(settlement.id, settlement.title)}>삭제</button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function AmountList({ amounts }: { amounts: Amounts }) {
+  return <ul>{Object.entries(amounts).map(([player, amount]) => <li key={player}><span>{player}</span><strong className={amount >= 0 ? "positive" : "negative"}>{amount > 0 ? "+" : ""}{amount.toLocaleString()}원</strong></li>)}</ul>;
+}

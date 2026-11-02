@@ -19,6 +19,11 @@ export function NewGameForm() {
     set(list.includes(name) ? list.filter((n) => n !== name) : [...list, name]);
   };
 
+  const toggleMyTeam = (name: string) => {
+    toggle(setMyTeam, myTeam, name);
+    setOppTeam((team) => team.filter((player) => player !== name));
+  };
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSubmitting(true);
@@ -54,9 +59,9 @@ export function NewGameForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
-      <div className="flex gap-3 flex-wrap">
-        <label className="flex flex-col gap-1 text-footnote">
+    <form onSubmit={handleSubmit} className="record-form">
+      <div className="record-fields">
+        <label>
           게임
           <select
             value={game}
@@ -70,7 +75,7 @@ export function NewGameForm() {
             ))}
           </select>
         </label>
-        <label className="flex flex-col gap-1 text-footnote">
+        <label>
           날짜
           <input
             type="date"
@@ -79,18 +84,18 @@ export function NewGameForm() {
             className="field"
           />
         </label>
-        <label className="flex flex-col gap-1 text-footnote">
-          금액 (승=+, 패=-)
+        <label>
+          정산 금액
           <input
             type="number"
             required
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
-            className="field w-32"
+            className="field"
           />
         </label>
-        <label className="flex flex-col gap-1 flex-1 min-w-40 text-footnote">
-          정산내역(제목)
+        <label>
+          한 줄 메모
           <input
             type="text"
             required
@@ -101,37 +106,38 @@ export function NewGameForm() {
         </label>
       </div>
 
-      <div>
-        <div className="text-footnote mb-2">나의 팀원</div>
-        <div className="flex gap-2 flex-wrap">
+      <fieldset className="team-picker">
+        <legend>내 팀</legend>
+        <div>
           {PLAYER_OPTIONS.map((p) => (
             <button
               type="button"
               key={p}
-              onClick={() => toggle(setMyTeam, myTeam, p)}
+              onClick={() => toggleMyTeam(p)}
               className={`chip ${myTeam.includes(p) ? "chip-selected" : ""}`}
             >
               {p}
             </button>
           ))}
         </div>
-      </div>
+      </fieldset>
 
-      <div>
-        <div className="text-footnote mb-2">상대 팀원</div>
-        <div className="flex gap-2 flex-wrap">
+      <fieldset className="team-picker">
+        <legend>상대 팀</legend>
+        <div>
           {PLAYER_OPTIONS.map((p) => (
             <button
               type="button"
               key={p}
               onClick={() => toggle(setOppTeam, oppTeam, p)}
+              disabled={myTeam.includes(p)}
               className={`chip ${oppTeam.includes(p) ? "chip-selected" : ""}`}
             >
               {p}
             </button>
           ))}
         </div>
-      </div>
+      </fieldset>
 
       {error && (
         <p className="text-footnote" style={{ color: "#ff453a" }}>
@@ -139,7 +145,7 @@ export function NewGameForm() {
         </p>
       )}
 
-      <button type="submit" disabled={submitting} className="btn-prominent">
+      <button type="submit" disabled={submitting} className="save-button">
         {submitting ? "저장 중..." : "노션에 추가"}
       </button>
     </form>
