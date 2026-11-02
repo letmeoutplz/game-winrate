@@ -22,7 +22,7 @@ export default async function Home() {
       <header className="dashboard-header">
         <div>
           <p className="eyebrow">GAME NIGHT LEDGER</p>
-          <h1>내기 승률</h1>
+          <h1>내기 계산기</h1>
           <p className="header-copy">기록은 간단하게, 다음 조합은 더 자신 있게.</p>
         </div>
         <dl className="summary-grid" aria-label="전체 성적 요약">

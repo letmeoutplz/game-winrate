@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "내기 승률",
-  description: "노션 기반 내기 승률 대시보드",
+  title: "내기 확인",
+  description: "내기 승률 대시보드",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
