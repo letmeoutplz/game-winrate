@@ -76,7 +76,7 @@ small,.text-footnote { font-size: .8125rem; color: var(--muted); }
 .save-button { grid-column: 1 / -1; justify-self: start; }
 .add-member-button { background: var(--tint); color: var(--accent); }
 .settlement-layout { display: grid; grid-template-columns: 1.1fr 1fr; gap: 32px; }
-.settlement-fields { display: grid; grid-template-columns: 1fr; gap: 12px; }
+.settlement-fields { display: grid; grid-template-columns: 1fr; gap: 12px; max-width: 220px; }
 .stake-field { max-width: 220px; margin-top: 24px; }
 .member-picker { margin-top: 24px; }
 .member-adder { max-width: 300px; flex-wrap: nowrap !important; }
@@ -126,7 +126,7 @@ small,.text-footnote { font-size: .8125rem; color: var(--muted); }
   .settlement-layout,.analysis-grid,.record-form { grid-template-columns: 1fr; gap: 20px; }
   .settlement-fields { grid-template-columns: 1fr; }
   .record-fields { grid-template-columns: 1fr 1fr; }
-  .stake-field,.member-adder { max-width: none; }
+  .settlement-fields,.stake-field,.member-adder { max-width: none; }
   .stake-field,.member-picker,.settlement-preview { margin-top: 20px; }
   .settlement-history { padding: 20px 0 0; border-left: 0; border-top: 1px solid var(--line); }
   .completed-sessions { margin-top: 24px; }
