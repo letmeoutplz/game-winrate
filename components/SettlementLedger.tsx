@@ -146,10 +146,12 @@ export function SettlementLedger() {
   return (
     <div className="settlement-layout">
       <form className="settlement-form" onSubmit={addRound}>
+        <div className="session-settings">
         <div className="settlement-fields">
           <label>날짜<input className="field" type="date" value={session.title} onChange={(event) => persistSession({ ...session, title: event.target.value })} /></label>
         </div>
         <label className="stake-field">1인당 판돈<input className="field" inputMode="numeric" type="number" min="0" step="1000" value={stake} onChange={(event) => setStake(event.target.value)} /></label>
+        </div>
         <div className="member-picker">
           <span>참가 멤버</span>
           <div>{memberOptions.map((player) => <button aria-pressed={participants.includes(player)} className={`chip ${participants.includes(player) ? "chip-selected" : ""}`} type="button" key={player} onClick={() => toggleParticipant(player)}>{player}</button>)}</div>

@@ -19,6 +19,11 @@ export default async function Home() {
 
   return (
     <main className="app-shell">
+      <nav className="workspace-nav" aria-label="주요 메뉴">
+        <a className="wordmark" href="#settlement-title">내기 계산기</a>
+        <div className="workspace-links"><a href="#settlement-title">정산</a><a href="#insights">승률과 추천</a><a href="#game-record">경기 기록</a></div>
+        <span className="nav-caption">함께한 판의 기록</span>
+      </nav>
       <header className="dashboard-header">
         <div>
           <h1>내기 계산기</h1>
@@ -32,7 +37,7 @@ export default async function Home() {
         <SettlementLedger />
       </section>
 
-      <details className="secondary-section">
+      <details className="secondary-section" id="insights">
         <summary>승률과 추천</summary>
         <dl className="summary-grid" aria-label="전체 성적 요약">
           <div><dt>승률</dt><dd>{winRate}%</dd></div>
@@ -71,7 +76,7 @@ export default async function Home() {
       </details>
       </details>
 
-      <details className="secondary-section">
+      <details className="secondary-section" id="game-record">
         <summary>경기 기록 추가</summary>
         <section className="record-panel" aria-label="경기 기록 추가">
           <NewGameForm />
