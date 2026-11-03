@@ -64,9 +64,9 @@ export function SettlementLedger() {
         if (!response.ok) throw new Error((await response.json()).message);
         setSettlements(await response.json());
         if (legacy.length > 0) window.localStorage.removeItem(STORAGE_KEY);
-      } catch (loadError) {
+      } catch {
         setSettlements(legacy);
-        setError(loadError instanceof Error ? loadError.message : "Supabase 기록을 불러오지 못했어요.");
+        setError("저장된 기록을 불러오지 못했어요. 새로고침해 주세요.");
       }
     });
     return () => window.cancelAnimationFrame(frame);
@@ -124,8 +124,8 @@ export function SettlementLedger() {
       window.localStorage.removeItem(ACTIVE_KEY);
       setSession({ ...emptySession, title: today() });
       setError(null);
-    } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : "정산 기록을 저장하지 못했어요.");
+    } catch {
+      setError("저장하지 못했어요. 진행 중 기록은 유지되니 다시 시도해 주세요.");
     } finally {
       setSaving(false);
     }
@@ -138,8 +138,8 @@ export function SettlementLedger() {
       if (!response.ok) throw new Error((await response.json()).message);
       setSettlements(settlements.filter((settlement) => settlement.id !== id));
       setError(null);
-    } catch (deleteError) {
-      setError(deleteError instanceof Error ? deleteError.message : "정산 기록을 삭제하지 못했어요.");
+    } catch {
+      setError("기록을 삭제하지 못했어요. 다시 시도해 주세요.");
     }
   }
 

@@ -146,7 +146,7 @@ export function NewGameForm() {
       )}
 
       <button type="submit" disabled={submitting} className="save-button">
-        {submitting ? "저장 중..." : "노션에 추가"}
+        {submitting ? "저장 중…" : "경기 저장"}
       </button>
     </form>
   );

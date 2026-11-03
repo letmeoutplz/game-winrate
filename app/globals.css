@@ -137,3 +137,37 @@ small,.text-footnote { font-size: .8125rem; color: var(--muted); }
 @media (prefers-reduced-motion: reduce) { button { transition: none; } }
 @media (prefers-reduced-transparency: reduce) { .game-filter { background: var(--surface); backdrop-filter: none; } }
 @media (prefers-contrast: more) { :root { --line: var(--muted); } }
+
+/* Settlement workspace: one task first, supporting tools in disclosure rows. */
+html, body { overflow-x: clip; }
+h1, h2, h3 { overflow-wrap: break-word; min-width: 0; }
+.app-shell { max-width: 1040px; }
+.dashboard-header { padding-bottom: 20px; }
+.settlement-panel { border: 0; border-radius: 12px; }
+.secondary-section { border-top: 1px solid var(--line); }
+.secondary-section > summary { min-height: 56px; padding: 16px 4px; font-weight: 650; }
+.secondary-section > .summary-grid { margin: 12px 4px 24px; }
+.secondary-section .primary-panel,
+.secondary-section .record-panel,
+.secondary-section .analysis-card,
+.secondary-section .matchup-details { background: transparent; border: 0; border-radius: 0; }
+.secondary-section .primary-panel,
+.secondary-section .record-panel { padding: 20px 4px; }
+.secondary-section .analysis-card { padding: 20px 4px; border-top: 1px solid var(--line); }
+.secondary-section .matchup-details summary { padding-left: 4px; }
+.game-filter { border-radius: 10px; background: var(--inset); backdrop-filter: none; }
+.filter-active,.filter-button { border-radius: 6px; }
+.chip { border-radius: 10px; }
+.save-button,.finish-button,.add-member-button { border-radius: 10px; }
+.running-total,.settlement-preview { border-radius: 0; padding: 16px 0; background: transparent; border-top: 1px solid var(--line); }
+.running-total > span { font-size: 1.125rem; }
+.running-total ul strong { font-size: 1.125rem; }
+.round-list { max-height: 240px; }
+.trend-chart { display: block; width: 100%; height: auto; }
+@media (max-width: 760px) {
+  .app-shell { padding-top: 20px; }
+  .dashboard-header { padding-bottom: 16px; }
+  h1 { font-size: 1.625rem; }
+  .settlement-panel { padding: 16px; }
+  .secondary-section .analysis-grid { gap: 0; }
+}

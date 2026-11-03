@@ -19,7 +19,7 @@ export function TrendChart({ points }: { points: TrendPoint[] }) {
     .join(" ");
 
   return (
-    <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-40">
+    <svg viewBox={`0 0 ${w} ${h}`} className="trend-chart" role="img" aria-label="경기별 누적 승률 추이">
       <line
         x1={pad}
         y1={yFor(0.5)}

@@ -14,5 +14,6 @@ export async function supabaseRequest(path: string, init?: RequestInit) {
     cache: "no-store",
   });
   if (!response.ok) throw new Error(await response.text() || `Supabase 요청 실패 (${response.status})`);
-  return response.status === 204 ? null : response.json();
+  const body = await response.text();
+  return body ? JSON.parse(body) : null;
 }
