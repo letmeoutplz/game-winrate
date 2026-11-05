@@ -1,5 +1,5 @@
 import { headToHead } from "@/lib/stats";
-import { Game } from "@/lib/notion";
+import { Game } from "@/lib/games";
 
 export function HeadToHeadTable({ games }: { games: Game[] }) {
   const { teammates, opponents, table } = headToHead(games);
@@ -49,9 +49,9 @@ export function HeadToHeadTable({ games }: { games: Game[] }) {
                 const pct = Math.round(cell.winRate * 100);
                 const color =
                   cell.winRate >= 0.6
-                    ? "#34c759"
+                    ? "var(--positive)"
                     : cell.winRate < 0.5
-                      ? "#ff453a"
+                      ? "var(--negative)"
                       : "var(--label-primary)";
                 return (
                   <td

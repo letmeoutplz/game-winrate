@@ -17,3 +17,12 @@ export async function supabaseRequest(path: string, init?: RequestInit) {
   const body = await response.text();
   return body ? JSON.parse(body) : null;
 }
+
+export async function supabaseRows<T>(path: string): Promise<T[]> {
+  const rows: T[] = [];
+  while (true) {
+    const page = await supabaseRequest(`${path}&limit=500&offset=${rows.length}`) as T[];
+    if (page.length === 0) return rows;
+    rows.push(...page);
+  }
+}

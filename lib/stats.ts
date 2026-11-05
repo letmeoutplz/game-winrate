@@ -1,4 +1,4 @@
-import { Game } from "./notion";
+import { Game } from "./games";
 
 export type TeammateStat = {
   name: string;
@@ -45,7 +45,7 @@ function flip(result: Game["result"]): Game["result"] {
 }
 
 export function winRateByTeammate(games: Game[]): TeammateStat[] {
-  const rows = games.flatMap((g) => g.myTeam.map((name) => ({ name, result: g.result })));
+  const rows = games.filter((g) => g.includesMe !== false && g.teamGame !== false).flatMap((g) => g.myTeam.map((name) => ({ name, result: g.result })));
   return buildStats(rows);
 }
 
@@ -67,7 +67,7 @@ export function headToHead(games: Game[]) {
   const table = new Map<string, Map<string, HeadToHeadCell>>();
 
   for (const g of games) {
-    if (g.result === "draw") continue;
+    if (g.result === "draw" || g.includesMe === false || g.teamGame === false) continue;
     for (const mate of g.myTeam) {
       teammates.add(mate);
       for (const opp of g.oppTeam) {
@@ -95,7 +95,7 @@ export type TrendPoint = { date: string; cumulativeWinRate: number; index: numbe
 // 무승부 경기는 승률 추이 계산에서 제외(집계에서 스킵)
 export function cumulativeWinRateTrend(games: Game[]): TrendPoint[] {
   const decisive = [...games]
-    .filter((g) => g.result !== "draw")
+    .filter((g) => g.result !== "draw" && g.includesMe !== false)
     .sort((a, b) => a.date.localeCompare(b.date));
   let wins = 0;
   return decisive.map((g, i) => {

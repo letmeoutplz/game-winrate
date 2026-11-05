@@ -1,10 +1,11 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { PLAYER_OPTIONS } from "@/lib/notion";
+import { useRouter } from "next/navigation";
+import { GAME_OPTIONS, PLAYER_OPTIONS } from "@/lib/games";
 import { Amounts, Round, Settlement } from "@/lib/settlements";
 
-type ActiveSession = { title: string; rounds: Round[] };
+type ActiveSession = { id?: string; title: string; rounds: Round[] };
 
 const STORAGE_KEY = "game-winrate-settlements";
 const ACTIVE_KEY = "game-winrate-active-settlement";
@@ -24,6 +25,9 @@ function totalAmounts(rounds: Round[]) {
 }
 
 export function SettlementLedger() {
+  const router = useRouter();
+  const [game, setGame] = useState<string>(GAME_OPTIONS[0]);
+  const [teamGame, setTeamGame] = useState(false);
   const [settlements, setSettlements] = useState<Settlement[]>([]);
   const [session, setSession] = useState<ActiveSession>(emptySession);
   const [stake, setStake] = useState("");
@@ -51,8 +55,7 @@ export function SettlementLedger() {
           setSession({ ...emptySession, title: today() });
         }
       } catch {
-        window.localStorage.removeItem(STORAGE_KEY);
-        window.localStorage.removeItem(ACTIVE_KEY);
+        setError("브라우저 기록을 읽지 못했어요. 기존 기록은 유지됩니다.");
       }
 
       try {
@@ -63,14 +66,17 @@ export function SettlementLedger() {
         const response = await fetch("/api/settlements");
         if (!response.ok) throw new Error((await response.json()).message);
         setSettlements(await response.json());
-        if (legacy.length > 0) window.localStorage.removeItem(STORAGE_KEY);
+        if (legacy.length > 0) {
+          window.localStorage.removeItem(STORAGE_KEY);
+          router.refresh();
+        }
       } catch {
         setSettlements(legacy);
         setError("저장된 기록을 불러오지 못했어요. 새로고침해 주세요.");
       }
     });
     return () => window.cancelAnimationFrame(frame);
-  }, []);
+  }, [router]);
 
   const roundAmounts = useMemo(() => {
     const amount = Number(stake) || 0;
@@ -108,14 +114,16 @@ export function SettlementLedger() {
     if (!Number.isFinite(Number(stake)) || Number(stake) <= 0) return setError("판돈을 0원보다 큰 금액으로 입력해 주세요.");
     if (losers.length === 0 || losers.length === participants.length) return setError("진 사람과 이긴 사람이 모두 있어야 정산할 수 있어요.");
 
-    persistSession({ ...session, rounds: [...session.rounds, { id: crypto.randomUUID(), amounts: roundAmounts }] });
+    persistSession({ ...session, rounds: [...session.rounds, { id: crypto.randomUUID(), game, teamGame, date: session.title, amounts: roundAmounts }] });
     setLosers([]);
     setError(null);
   }
 
   async function finishSession() {
     if (session.rounds.length === 0) return setError("최소 한 판을 기록한 뒤 최종 저장할 수 있어요.");
-    const settlement: Settlement = { ...session, note: "", id: crypto.randomUUID(), createdAt: new Date().toISOString() };
+    const id = session.id ?? crypto.randomUUID();
+    persistSession({ ...session, id });
+    const settlement: Settlement = { ...session, note: "", id, createdAt: new Date().toISOString() };
     setSaving(true);
     try {
       const response = await fetch("/api/settlements", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(settlement) });
@@ -124,6 +132,7 @@ export function SettlementLedger() {
       window.localStorage.removeItem(ACTIVE_KEY);
       setSession({ ...emptySession, title: today() });
       setError(null);
+      router.refresh();
     } catch {
       setError("저장하지 못했어요. 진행 중 기록은 유지되니 다시 시도해 주세요.");
     } finally {
@@ -138,6 +147,7 @@ export function SettlementLedger() {
       if (!response.ok) throw new Error((await response.json()).message);
       setSettlements(settlements.filter((settlement) => settlement.id !== id));
       setError(null);
+      router.refresh();
     } catch {
       setError("기록을 삭제하지 못했어요. 다시 시도해 주세요.");
     }
@@ -146,12 +156,15 @@ export function SettlementLedger() {
   return (
     <div className="settlement-layout">
       <form className="settlement-form" onSubmit={addRound}>
+        <fieldset disabled={saving} className="settlement-inputs">
         <div className="session-settings">
         <div className="settlement-fields">
           <label>날짜<input className="field" type="date" value={session.title} onChange={(event) => persistSession({ ...session, title: event.target.value })} /></label>
+          <label>게임<select className="field" value={game} onChange={(event) => setGame(event.target.value)}>{GAME_OPTIONS.map((name) => <option key={name}>{name}</option>)}</select></label>
         </div>
         <label className="stake-field">1인당 판돈<input className="field" inputMode="numeric" type="number" min="0" step="1000" value={stake} onChange={(event) => setStake(event.target.value)} /></label>
         </div>
+        <label className="team-option"><input type="checkbox" checked={teamGame} onChange={(event) => setTeamGame(event.target.checked)} /><span>팀전<small>이긴 사람끼리, 진 사람끼리 같은 팀</small></span></label>
         <div className="member-picker">
           <span>참가 멤버</span>
           <div>{memberOptions.map((player) => <button aria-pressed={participants.includes(player)} className={`chip ${participants.includes(player) ? "chip-selected" : ""}`} type="button" key={player} onClick={() => toggleParticipant(player)}>{player}</button>)}</div>
@@ -169,14 +182,15 @@ export function SettlementLedger() {
         </>}
         {error && <p className="form-error" role="alert">{error}</p>}
         <button className="save-button" type="submit">이번 판 추가</button>
+        </fieldset>
       </form>
 
       <div className="settlement-history" aria-live="polite">
-        <h3>진행 중 기록 <span>{session.rounds.length}판</span></h3>
+        <div className="ledger-heading"><h3>진행 중 기록</h3><span className="round-count">{session.rounds.length}판</span></div>
         {session.rounds.length === 0 ? <p className="empty-state">판을 추가하면 여기에 차례로 쌓입니다.</p> : <>
-          <ol className="round-list">{session.rounds.map((round, index) => <li key={round.id}><span>{index + 1}판</span><AmountList amounts={round.amounts} /></li>)}</ol>
+          <ol className="round-list">{session.rounds.map((round, index) => <li key={round.id}><span className="round-label"><span>{index + 1}판</span><span>{round.game ?? "미분류"}</span></span><AmountList amounts={round.amounts} /></li>)}</ol>
           <div className="running-total"><span>현재 누적</span><AmountList amounts={runningTotals} /></div>
-          <button className="finish-button" type="button" disabled={saving} onClick={finishSession}>{saving ? "저장 중…" : "최종 저장"}</button>
+          <button className="finish-button" type="button" disabled={saving} onClick={finishSession}>{saving ? "저장 중…" : "최종 저장하고 승률 반영"}</button>
         </>}
         {settlements.length > 0 && (
           <div className="completed-sessions">
@@ -187,7 +201,7 @@ export function SettlementLedger() {
                   <summary>{settlement.title} <span>{settlement.rounds.length}판</span></summary>
                   <AmountList amounts={totalAmounts(settlement.rounds)} />
                   <ol className="round-list">
-                    {settlement.rounds.map((round, index) => <li key={round.id}><span>{index + 1}판</span><AmountList amounts={round.amounts} /></li>)}
+                    {settlement.rounds.map((round, index) => <li key={round.id}><span className="round-label"><span>{index + 1}판</span><span>{round.game ?? "미분류"}</span></span><AmountList amounts={round.amounts} /></li>)}
                   </ol>
                 </details>
                 <button className="delete-session-button" type="button" onClick={() => deleteSettlement(settlement.id, settlement.title)}>삭제</button>

@@ -1,0 +1,21 @@
+{
+  "scanned": "2026-11-05",
+  "findings": {
+    "fonts": "System Korean sans; app/layout.tsx:1-18",
+    "palette": "Existing neutral tokens; app/globals.css baseline",
+    "framework": "Next.js 16.3.3, React 19; package.json:1-24",
+    "product": "http://localhost:3001; real Supabase sessions and history",
+    "reference": "User supplied grayscale inset dashboard screenshot"
+  },
+  "preserve": [
+    "all fields and handlers",
+    "Supabase data flow",
+    "pending browser sessions"
+  ],
+  "introduce": [
+    "dark navigation rail",
+    "tactile grey surfaces",
+    "responsive horizontal navigation",
+    "visible control boundaries"
+  ]
+}

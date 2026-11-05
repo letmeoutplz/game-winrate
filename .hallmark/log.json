@@ -1,0 +1,30 @@
+[
+ {
+  "mode": "redesign",
+  "depth": "full",
+  "scope": "app",
+  "shape": "app screen",
+  "theme": "custom",
+  "idea": "a tactile grey settlement desk",
+  "axes": "mid/grotesk-sans/neutral",
+  "hero": "none, app scope",
+  "nav": "compact dark rail, horizontal on mobile",
+  "footer": "none, functional app",
+  "imagery": "real product UI; supplied reference",
+  "photos": [],
+  "entry": "app/page.tsx",
+  "fingerprint": "dark-rail/left-form/right-ledger/disclosed-insights",
+  "sections": [
+   "settlement",
+   "insights"
+  ],
+  "signature": "live round ledger",
+  "waived": [
+   "23",
+   "47c"
+  ],
+  "prompt": "Reference-based grey dashboard redesign with mobile sizing checks",
+  "finish-review": "subagent ship; 0 findings",
+  "date": "2026-11-05"
+ }
+]

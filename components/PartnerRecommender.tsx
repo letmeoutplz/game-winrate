@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Game, GAME_OPTIONS } from "@/lib/notion";
+import { Game, GAME_OPTIONS } from "@/lib/games";
 import { winRateByTeammate } from "@/lib/stats";
 import { TeammateBars } from "./TeammateBars";
 
@@ -32,7 +32,7 @@ export function PartnerRecommender({ games }: { games: Game[] }) {
         <div className="best-pick">
           <p>가장 잘 맞는 파트너</p>
           <div><strong>{best.name}</strong><span>보정 승률 {Math.round(best.adjustedWinRate * 100)}%</span></div>
-          <small>{selected === "전체" ? "전체 게임" : selected}에서 {best.wins}승 {best.games - best.wins}패 · 실승률 {Math.round(best.winRate * 100)}%</small>
+          <small>{selected === "전체" ? "전체 게임" : selected}에서 {best.wins}승 {best.games - best.wins}패 / 실승률 {Math.round(best.winRate * 100)}%</small>
         </div>
       ) : (
         <p className="empty-state">이 게임으로 같이 한 기록이 아직 없어요.</p>

@@ -1,0 +1,20 @@
+*, *::before, *::after { box-sizing: border-box; }
+html, body { overflow-x: clip; }
+html { scrollbar-color: var(--muted) var(--bg); scroll-padding-top: var(--space-lg); }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: var(--text-md); line-height: 1.55; -webkit-font-smoothing: antialiased; caret-color: var(--color-focus); }
+::selection { background: var(--tint); color: var(--ink); }
+:focus-visible { outline: 3px solid var(--color-focus); outline-offset: var(--space-2xs); }
+h1, h2, h3 { margin: 0; font-family: var(--font-display); overflow-wrap: break-word; min-width: 0; text-wrap: balance; }
+p, dl { margin: 0; }
+p { text-wrap: pretty; }
+button, input, select { font: inherit; }
+button, a, input, select, summary { -webkit-tap-highlight-color: transparent; }
+button, summary { cursor: pointer; }
+button, a, summary { touch-action: manipulation; }
+button { transition: background-color var(--dur-micro) ease, transform var(--dur-micro) ease; }
+button:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+button[aria-busy="true"] { cursor: progress; }
+button:active:not(:disabled) { transform: translateY(1px); }
+svg { display: block; }
+[hidden] { display: none !important; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }
